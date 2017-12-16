@@ -52,7 +52,6 @@ class Light(zha.Entity, light.Light):
         if zcl_clusters.general.LevelControl.cluster_id in self._in_clusters:
             self._supported_features |= light.SUPPORT_BRIGHTNESS
             self._supported_features |= light.SUPPORT_TRANSITION
-            self._brightness = 0
         if zcl_clusters.lighting.Color.cluster_id in self._in_clusters:
             color_capabilities = kwargs.get('color_capabilities', 0x10)
             if color_capabilities & 0x10:
@@ -61,7 +60,6 @@ class Light(zha.Entity, light.Light):
             if color_capabilities & 0x08:
                 self._supported_features |= light.SUPPORT_XY_COLOR
                 self._supported_features |= light.SUPPORT_RGB_COLOR
-                self._xy_color = (1.0, 1.0)
 
     @property
     def is_on(self) -> bool:
@@ -79,45 +77,35 @@ class Light(zha.Entity, light.Light):
             temperature = kwargs[light.ATTR_COLOR_TEMP]
             yield from self._endpoint.light_color.move_to_color_temp(
                 temperature, duration)
-            self._color_temp = temperature
 
+        xy_color = None
         if light.ATTR_XY_COLOR in kwargs:
-            self._xy_color = kwargs[light.ATTR_XY_COLOR]
+            xy_color = kwargs[light.ATTR_XY_COLOR]
         elif light.ATTR_RGB_COLOR in kwargs:
             xyb = color_RGB_to_xy(
                 *(int(val) for val in kwargs[light.ATTR_RGB_COLOR]))
-            self._xy_color = (xyb[0], xyb[1])
-            self._brightness = xyb[2]
-        if light.ATTR_XY_COLOR in kwargs or light.ATTR_RGB_COLOR in kwargs:
+            xy_color = (xyb[0], xyb[1])
+        if xy_color is not None:
             yield from self._endpoint.light_color.move_to_color(
-                int(self._xy_color[0] * 65535),
-                int(self._xy_color[1] * 65535),
+                int(xy_color[0] * 65535),
+                int(xy_color[1] * 65535),
                 duration,
             )
 
-        if self._brightness is not None:
-            brightness = kwargs.get(
-                light.ATTR_BRIGHTNESS, self._brightness or 255)
-            self._brightness = brightness
+        if light.ATTR_BRIGHTNESS in kwargs:
+            brightness = kwargs[light.ATTR_BRIGHTNESS]
             # Move to level with on/off:
             yield from self._endpoint.level.move_to_level_with_on_off(
                 brightness,
                 duration
             )
-            self._state = 1
-            self.async_schedule_update_ha_state()
-            return
-
-        yield from self._endpoint.on_off.on()
-        self._state = 1
-        self.async_schedule_update_ha_state()
+        else:
+            yield from self._endpoint.on_off.on()
 
     @asyncio.coroutine
     def async_turn_off(self, **kwargs):
         """Turn the entity off."""
         yield from self._endpoint.on_off.off()
-        self._state = 0
-        self.async_schedule_update_ha_state()
 
     @property
     def brightness(self):
