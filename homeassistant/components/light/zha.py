@@ -9,7 +9,6 @@ import logging
 
 from homeassistant.components import light, zha
 from homeassistant.util.color import color_RGB_to_xy
-from homeassistant.const import STATE_UNKNOWN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -81,8 +80,6 @@ class Light(zha.Entity, light.Light):
     @property
     def is_on(self) -> bool:
         """Return true if entity is on."""
-        if self._state == STATE_UNKNOWN:
-            return False
         return bool(self._state)
 
     @asyncio.coroutine

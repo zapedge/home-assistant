@@ -32,8 +32,6 @@ class Switch(zha.Entity, SwitchDevice):
     @property
     def is_on(self) -> bool:
         """Return if the switch is on based on the statemachine."""
-        if self._state == 'unknown':
-            return False
         return bool(self._state)
 
     @asyncio.coroutine

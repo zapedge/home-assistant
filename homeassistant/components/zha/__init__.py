@@ -259,7 +259,7 @@ class Entity(entity.Entity):
         self._endpoint = endpoint
         self._in_clusters = in_clusters
         self._out_clusters = out_clusters
-        self._state = ha_const.STATE_UNKNOWN
+        self._state = None
 
     def attribute_updated(self, attribute, value):
         """Handle an attribute updated on this cluster."""
