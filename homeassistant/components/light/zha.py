@@ -166,11 +166,3 @@ class Light(zha.Entity, light.Light):
                                           ['current_x', 'current_y'])
             if 'current_x' in result and 'current_y' in result:
                 self._xy_color = (result['current_x'], result['current_y'])
-
-    @property
-    def should_poll(self) -> bool:
-        """Return True if entity has to be polled for state.
-
-        False if entity pushes its state to HA.
-        """
-        return False
