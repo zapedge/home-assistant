@@ -35,6 +35,23 @@ def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     async_add_devices([Light(**discovery_info)], update_before_add=True)
 
 
+@asyncio.coroutine
+def safe_read(cluster, attributes):
+    """Swallow all exceptions from network read.
+
+    If we throw during initialization, setup fails. Rather have an
+    entity that exists, but is in a maybe wrong state, than no entity.
+    """
+    try:
+        result, _ = yield from cluster.read_attributes(
+            attributes,
+            allow_cache=False,
+        )
+        return result
+    except Exception:  # pylint: disable=broad-except
+        return {}
+
+
 class Light(zha.Entity, light.Light):
     """Representation of a ZHA or ZLL light."""
 
@@ -130,24 +147,6 @@ class Light(zha.Entity, light.Light):
     @asyncio.coroutine
     def async_update(self):
         """Retrieve latest state."""
-        _LOGGER.debug("%s async_update", self.entity_id)
-
-        @asyncio.coroutine
-        def safe_read(cluster, attributes):
-            """Swallow all exceptions from network read.
-
-            If we throw during initialization, setup fails. Rather have an
-            entity that exists, but is in a maybe wrong state, than no entity.
-            """
-            try:
-                result, _ = yield from cluster.read_attributes(
-                    attributes,
-                    allow_cache=False,
-                )
-                return result
-            except Exception:  # pylint: disable=broad-except
-                return {}
-
         result = yield from safe_read(self._endpoint.on_off, ['on_off'])
         self._state = result.get('on_off', self._state)
 
