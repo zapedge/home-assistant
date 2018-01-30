@@ -165,6 +165,9 @@ def _async_setup_component(hass: core.HomeAssistant,
         loader.set_component(domain, None)
         return False
 
+    for entry in hass.config_manager.async_entries(domain):
+        yield from component.async_setup_entry(hass, entry)
+
     hass.config.components.add(component.DOMAIN)
 
     # Cleanup
