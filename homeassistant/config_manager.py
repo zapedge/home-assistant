@@ -1,19 +1,19 @@
 """Helper to manage entering configuration."""
 import asyncio
+import os
 import uuid
 
 from .core import callback
 from .exceptions import HomeAssistantError
 from .util.decorator import Registry
-from .util.yaml import load_yaml, save_yaml
+from .util.json import load_json, save_json
 
 
 SOURCE_USER = 'user'
 SOURCE_DISCOVERY = 'discovery'
-STEP_DISCOVERY = 'discovery'
+
 HANDLERS = Registry()
-# TODO: move this to .system/config_manager.yaml
-PATH_CONFIG = '.config_manager.conf'
+PATH_CONFIG = '.config_manager.json'
 
 DATA_CONFIG_MANAGER = 'config_manager'
 SAVE_DELAY = 1
@@ -23,10 +23,9 @@ RESULT_TYPE_CREATE_ENTRY = 'create_entry'
 RESULT_TYPE_ABORT = 'abort'
 # RESULT_TYPE_LOADING = 'loading' (auto refresh in 1 seconds)
 
-
 # Future
 # Allow strategies. Like max 1 account allowed,
-# What to do with dependencies ? First account, then config.yaml
+
 
 class ConfigEntry:
     """Hold a configuration entry."""
@@ -156,9 +155,12 @@ class ConfigManager:
     @asyncio.coroutine
     def async_load(self):
         """Load the config."""
-        entries = yield from self.hass.async_add_job(
-            load_yaml, self.hass.config.path(PATH_CONFIG))
+        assert False
+        path = self.hass.config.path(PATH_CONFIG)
+        if not os.path.isfile(path):
+            self.entries = []
 
+        entries = yield from self.hass.async_add_job(load_json, path)
         self.entries = [ConfigEntry(**entry) for entry in entries]
 
     @callback
@@ -178,7 +180,7 @@ class ConfigManager:
         data = [entry.as_dict() for entry in self.entries]
 
         yield from self.hass.async_add_job(
-            save_yaml, self.hass.config.path(PATH_CONFIG), data)
+            save_json, self.hass.config.path(PATH_CONFIG), data)
 
 
 class ConfigFlowHandler:

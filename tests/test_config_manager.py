@@ -149,6 +149,7 @@ def test_create_saves_data(manager):
 
 @asyncio.coroutine
 def test_entries_gets_entries(manager):
+    """Test entries are filtered by domain."""
     MockConfigEntry(domain='test').add_to_manager(manager)
     entry1 = MockConfigEntry(domain='test2')
     entry1.add_to_manager(manager)
@@ -201,15 +202,17 @@ def test_saving_and_loading(hass):
                 }
             )
 
-    yaml_path = 'homeassistant.util.yaml.open'
+    json_path = 'homeassistant.util.json.open'
 
     with patch('homeassistant.config_manager.HANDLERS.get',
                return_value=Test2Flow), \
             patch.object(config_manager, 'SAVE_DELAY', 0):
         yield from hass.config_manager.async_configure('test')
 
-    with patch(yaml_path, mock_open(), create=True) as mock_write:
+    with patch(json_path, mock_open(), create=True) as mock_write:
+        # To trigger the call_later
         yield from asyncio.sleep(0, loop=hass.loop)
+        # To execute the save
         yield from hass.async_block_till_done()
 
     # Mock open calls are: open file, context enter, write, context leave
@@ -219,7 +222,7 @@ def test_saving_and_loading(hass):
     manager = config_manager.ConfigManager(hass)
 
     with patch('os.path.isfile', return_value=True), \
-            patch(yaml_path, mock_open(read_data=written), create=True):
+            patch(json_path, mock_open(read_data=written), create=True):
         yield from manager.async_load()
 
     # Ensure same order
