@@ -1,7 +1,7 @@
 """
-Support for eQ-3 Bluetooth Smart thermostats.
+Support for Eurotronic Bluetooth Smart thermostats.
 For more details about this platform, please refer to the documentation at
-https://home-assistant.io/components/climate.eq3btsmart/
+https://home-assistant.io/components/climate.etcometblue/
 """
 import logging
 
@@ -14,7 +14,7 @@ from homeassistant.const import (
     CONF_MAC, CONF_DEVICES, TEMP_CELSIUS, ATTR_TEMPERATURE, PRECISION_HALVES)
 import homeassistant.helpers.config_validation as cv
 
-REQUIREMENTS = ['python-eq3bt==0.1.8']
+REQUIREMENTS = ['cometblue']
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,38 +42,38 @@ SUPPORT_FLAGS = (SUPPORT_TARGET_TEMPERATURE | SUPPORT_OPERATION_MODE |
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
-    """Set up the eQ-3 BLE thermostats."""
+    """Set up the Eurotronic BLE thermostats."""
     devices = []
 
     for name, device_cfg in config[CONF_DEVICES].items():
         mac = device_cfg[CONF_MAC]
-        devices.append(EQ3BTSmartThermostat(mac, name))
+        devices.append(CometBlueThermostat(mac, name))
 
     add_devices(devices)
 
 
 # pylint: disable=import-error
-class EQ3BTSmartThermostat(ClimateDevice):
-    """Representation of an eQ-3 Bluetooth Smart thermostat."""
+class CometBlueThermostat(ClimateDevice):
+    """Representation of an Eurotronic Bluetooth Smart thermostat."""
 
     def __init__(self, _mac, _name):
         """Initialize the thermostat."""
         # We want to avoid name clash with this module.
-        import eq3bt as eq3
+        import cometblue as etcometblue
 
         self.modes = {
-            eq3.Mode.Open: STATE_ON,
-            eq3.Mode.Closed: STATE_OFF,
-            eq3.Mode.Auto: STATE_AUTO,
-            eq3.Mode.Manual: STATE_MANUAL,
-            eq3.Mode.Boost: STATE_BOOST,
-            eq3.Mode.Away: STATE_AWAY,
+            etcometblue.Mode.Open: STATE_ON,
+            etcometblue.Mode.Closed: STATE_OFF,
+            etcometblue.Mode.Auto: STATE_AUTO,
+            etcometblue.Mode.Manual: STATE_MANUAL,
+            etcometblue.Mode.Boost: STATE_BOOST,
+            etcometblue.Mode.Away: STATE_AWAY,
         }
 
         self.reverse_modes = {v: k for k, v in self.modes.items()}
 
         self._name = _name
-        self._thermostat = eq3.Thermostat(_mac)
+        self._thermostat = etcometblue.Thermostat(_mac)
 
     @property
     def supported_features(self):
@@ -171,7 +171,7 @@ class EQ3BTSmartThermostat(ClimateDevice):
 
     def update(self):
         """Update the data from the thermostat."""
-        from bluepy.btle import BTLEException
+        from bluepy.btle import BTLEException // change LIB to GATT
         try:
             self._thermostat.update()
         except BTLEException as ex:
